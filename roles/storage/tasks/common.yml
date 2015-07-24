@@ -1,0 +1,32 @@
+---
+
+- name: copy private key
+  copy: src=insecure_private_key owner={{ username }} group={{ group }} dest=/home/{{ username }}/.ssh/id_rsa force=no mode=0600
+
+- name: stop iptables
+  service: name=iptables state=stopped enabled=no
+
+- name: stop firewalld
+  service: name=firewalld state=stopped enabled=no
+
+- name: disable selinux
+  selinux: state=disabled
+
+- name: install common packages (centos)
+  yum: name={{ item }} state=present
+  with_items: common_packages
+  when: ansible_distribution == 'CentOS'
+
+- name: install common packages (fedora)
+  dnf: name={{ item }} state=present
+  with_items: common_packages
+  when: ansible_distribution == 'Fedora'
+
+- name: enable rsync
+  lineinfile: dest=/etc/xinetd.d/rsync line="disable = no" create=yes
+
+- name: make sure rsync is running
+  service: name=rsyncd state=started enabled=yes
+
+- name: start memcache
+  service: name=memcached state=started enabled=yes

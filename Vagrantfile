@@ -2,49 +2,62 @@
 # vi: set ft=ruby :
 #
 
+# Things are hardcoded elsewhere, changing NODES and DISKS here wouldn't work
+# unless you change it everywhere in other files
 NODES = 4
-DISKS = 8
+DISKS = 4
+
+# Disk size in MB
+DISK_SIZE = 500*1024
+
+# Possible values : "centos7" and "fedora22"
+# fedora22 is broken as of now
+BOX="centos7"
 
 Vagrant.configure("2") do |config|
-    config.vm.box = "chef/centos-7.1"
-    config.ssh.insert_key = false
 
-    # Make the client
-    config.vm.define :client do |client|
-        client.vm.network :private_network, ip: "192.168.10.90"
-        client.vm.host_name = "client"
-        client.vm.provider :virtualbox do |vb|
-            vb.memory = 1024
-            vb.cpus = 2
-        end
+    if BOX == "centos7"
+        config.vm.box = "chef/centos-7.1"
+    end
+    if BOX == "fedora22"
+        config.vm.box = "boxcutter/fedora22"
     end
 
+    config.ssh.insert_key = false
+
     # Make the glusterfs cluster, each with DISKS number of drives
-    (0..NODES-1).each do |i|
+    (1..NODES).each do |i|
         config.vm.define "storage#{i}" do |storage|
             storage.vm.hostname = "storage#{i}"
-            storage.vm.network :private_network, ip: "192.168.10.10#{i}"
-            (0..DISKS-1).each do |d|
-                storage.vm.provider :virtualbox do |vb|
-                    vb.customize [ "createhd", "--filename", "disk-#{i}-#{d}.vdi", "--size", 500*1024 ]
-                    vb.customize [ "storageattach", :id, "--storagectl", "SATA Controller", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{i}-#{d}.vdi" ]
-                    vb.memory = 1024
-                    vb.cpus = 2
+            storage.vm.network :private_network, ip: "192.168.10.10#{i}", netmask: "255.255.255.0"
+            storage.vm.provider :virtualbox do |vb|
+                vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+                if BOX == "fedora22"
+                    # Some boxes does not have SATA controller, so we add one here
+                    # Comment this out if you get an error that controller exists
+                    # Refer: https://gist.github.com/leifg/4713995
+                    #        https://github.com/mitchellh/vagrant/issues/4015
+                    vb.customize(['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata'])
+                end
+                vb.memory = 768
+                vb.cpus = 2
+                (1..DISKS).each do |d|
+                    disk_file = "disks/disk-#{i}-#{d}.vdi"
+                    unless File.exist?(disk_file)
+                        vb.customize [ "createhd", "--filename", disk_file, "--size", DISK_SIZE ]
+                    end
+                    vb.customize [ "storageattach", :id, "--storagectl", "SATA Controller", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disks/disk-#{i}-#{d}.vdi" ]
                 end
             end
 
-            if i == (NODES-1)
+            if i == (NODES)
                 # View the documentation for the provider you're using for more
                 # information on available options.
                 storage.vm.provision :ansible do |ansible|
                     ansible.limit = "all"
                     ansible.playbook = "site.yml"
                     ansible.groups = {
-                        "client" => ["client"],
-                        "gluster" => (0..NODES-1).map {|j| "storage#{j}"},
-                        "swift" => (0..NODES-1).map {|j| "storage#{j}"},
-                        "swiftonfile" => (0..NODES-1).map {|j| "storage#{j}"},
-                        "volume" => (0..NODES-1).map {|j| "storage#{j}"},
+                        "storage" => (1..NODES).map {|j| "storage#{j}"},
                     }
                 end
             end
@@ -52,4 +65,3 @@ Vagrant.configure("2") do |config|
 
     end
 end
-

@@ -1,0 +1,28 @@
+---
+
+- name: add storage1 to /etc/hosts
+  lineinfile: dest=/etc/hosts regexp='^192\.168\.10\.101' line='192.168.10.101 storage1' owner=root group=root mode=0644
+
+- name: add storage2 to /etc/hosts
+  lineinfile: dest=/etc/hosts regexp='^192\.168\.10\.102' line='192.168.10.102 storage2' owner=root group=root mode=0644
+
+- name: add storage3 to /etc/hosts
+  lineinfile: dest=/etc/hosts regexp='^192\.168\.10\.103' line='192.168.10.103 storage3' owner=root group=root mode=0644
+
+- name: add storage4 to /etc/hosts
+  lineinfile: dest=/etc/hosts regexp='^192\.168\.10\.104' line='192.168.10.104 storage4' owner=root group=root mode=0644
+
+- name: Bring up all network interfaces are up
+  shell: ifup {{ item }}
+  with_items: "{{ ansible_interfaces }}"
+  register: nw_result
+  failed_when: "nw_result.rc!=0 and 'is already running' not in nw_result.stderr"
+
+- pause: seconds=5
+
+- name: Check private network works
+  command: ping -q -c 1 storage{{ item }}
+  with_sequence: start=1 end=4
+
+- name: Check NAT works and there's internet
+  command: ping -q -c 1 google.com

@@ -1,38 +1,6 @@
 - hosts: all
   sudo: True
+  vars_files:
+    - "global_vars.yml"
   roles:
-    - common
-
-- hosts: client
-  sudo: True
-  roles:
-    - gluster_client
-
-- hosts: gluster
-  sudo: True
-  roles:
-    - gluster
-
-- hosts: swift
-  sudo: True
-  vars:
-    source_dir: "/swift"
-    group: "vagrant"
-    username: "vagrant"
-  roles:
-    - swift
-
-- hosts: swiftonfile
-  sudo: True
-  vars:
-    source_dir: "/swiftonfile"
-    group: "vagrant"
-    username: "vagrant"
-  roles:
-    - swiftonfile
-
-- hosts: volume
-  sudo: True
-  roles:
-    - volume
-
+    - storage

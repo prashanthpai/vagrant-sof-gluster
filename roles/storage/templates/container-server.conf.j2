@@ -1,0 +1,19 @@
+[DEFAULT]
+devices = /export
+bind_port = 6011
+workers = 2
+user = {{ username }}
+
+[pipeline:main]
+pipeline = container-server
+
+[app:container-server]
+use = egg:swift#container
+
+[container-replicator]
+
+[container-updater]
+
+[container-auditor]
+
+[container-sync]

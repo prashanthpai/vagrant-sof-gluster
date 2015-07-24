@@ -1,0 +1,8 @@
+#!/bin/bash
+
+mkdir -p /var/cache/swift
+chown -R {{ username }}:{{ group }} /var/cache/swift
+mkdir -p /var/run/swift
+chown -R {{ username }}:{{ group }} /var/run/swift
+
+exit 0

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+swift-init all stop
+service memcached restart
+
+# Remove all DBs from glusterfs bircks
+shopt -s extglob
+rm -rf /export/brick{1..8}/!(b)
+shopt -u extglob
+
+# Remove all objects
+rm -rf /mnt/swiftonfile/test{1..4}/*

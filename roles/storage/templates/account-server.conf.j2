@@ -1,0 +1,17 @@
+[DEFAULT]
+devices = /export
+bind_port = 6012
+workers = 2
+user = {{ username }}
+
+[pipeline:main]
+pipeline = account-server
+
+[app:account-server]
+use = egg:swift#account
+
+[account-replicator]
+
+[account-auditor]
+
+[account-reaper]

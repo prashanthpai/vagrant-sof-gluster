@@ -1,0 +1,11 @@
+---
+
+- include: network.yml
+
+- include: repos.yml
+
+- include: common.yml
+
+- include: glusterfs.yml
+
+- include: swiftonfile.yml

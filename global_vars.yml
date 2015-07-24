@@ -1,0 +1,5 @@
+---
+username: "vagrant"
+group: "vagrant"
+swiftonfile_centos_rpm_url: "http://build.gluster.org/view/Swift-on-File/job/swiftonfile-ci-el7/lastSuccessfulBuild/artifact/build/swiftonfile-2.3.0-0.cr_199472_build_40.el7.centos.noarch.rpm"
+swiftonfile_fedora_rpm_url: "{{ swiftonfile_centos_rpm_url }}"

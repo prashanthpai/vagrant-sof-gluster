@@ -1,0 +1,21 @@
+---
+
+common_packages:
+    - curl
+    - memcached
+    - rsync
+    - vim
+    - man-pages
+    - tree
+    - python-pip
+
+glusterfs_packages:
+    - glusterfs-server
+    - glusterfs-fuse
+
+swift_packages:
+    - openstack-swift
+    - openstack-swift-account
+    - openstack-swift-container
+    - openstack-swift-object
+    - openstack-swift-proxy

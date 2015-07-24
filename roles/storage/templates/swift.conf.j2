@@ -1,0 +1,26 @@
+[swift-hash]
+
+swift_hash_path_suffix = swiftonfile
+swift_hash_path_prefix = glusterfs
+
+[swift-constraints]
+max_account_name_length = 255
+max_container_name_length = 255
+max_object_name_length = 221
+
+[storage-policy:0]
+name = test1
+default = yes
+policy_type = replication
+
+[storage-policy:1]
+name = test2
+policy_type = replication
+
+[storage-policy:2]
+name = test3
+policy_type = replication
+
+[storage-policy:3]
+name = test4
+policy_type = replication

@@ -1,0 +1,33 @@
+---
+
+- name: install yum-plugin-priorities (centos)
+  yum: name=yum-plugin-priorities state=installed
+  when: ansible_distribution == 'CentOS'
+
+- name: install yum-plugin-priorities (fedora)
+  dnf: name={{ item }} state=installed
+  when: ansible_distribution == 'Fedora'
+  with_items:
+    - dnf-plugins-core
+    - dnf-plugins-extras-repomanage
+    - yum-plugin-priorities
+
+- name: add EPEL repo
+  command: yum -y install epel-release creates=/etc/yum.repos.d/epel.repo
+  when: ansible_distribution == "CentOS"
+
+- name: add RDO repo (kilo - centos)
+  command: yum -y install https://repos.fedorapeople.org/repos/openstack/openstack-kilo/rdo-release-kilo-1.noarch.rpm creates=/etc/yum.repos.d/rdo-release.repo
+  when: ansible_distribution == "CentOS"
+
+- name: add RDO repo (kilo - fedora)
+  command: dnf -y install https://repos.fedorapeople.org/repos/openstack/openstack-kilo/rdo-release-kilo-1.noarch.rpm creates=/etc/yum.repos.d/rdo-release.repo
+  when: ansible_distribution == "Fedora"
+
+- name: add glusterfs repo (epel)
+  shell: curl -o /etc/yum.repos.d/glusterfs-epel.repo http://download.gluster.org/pub/gluster/glusterfs/LATEST/EPEL.repo/glusterfs-epel.repo creates=/etc/yum.repos.d/glusterfs-epel.repo
+  when: ansible_distribution == "CentOS"
+
+- name: add glusterfs repo (fedora)
+  shell: curl -o /etc/yum.repos.d/glusterfs-fedora.repo http://download.gluster.org/pub/gluster/glusterfs/LATEST/Fedora/glusterfs-fedora.repo creates=/etc/yum.repos.d/glusterfs-fedora.repo
+  when: ansible_distribution == "Fedora"

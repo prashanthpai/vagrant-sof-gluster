@@ -1,0 +1,61 @@
+#!/bin/bash
+
+cd /etc/swift
+
+rm -f *.builder *.ring.gz backups/*.builder backups/*.ring.gz
+
+swift-ring-builder container.builder create 12 3 1
+swift-ring-builder container.builder add r1z1-192.168.10.101:6011/brick1 1
+swift-ring-builder container.builder add r1z1-192.168.10.101:6011/brick2 1
+swift-ring-builder container.builder add r1z1-192.168.10.101:6011/brick3 1
+swift-ring-builder container.builder add r1z1-192.168.10.101:6011/brick4 1
+swift-ring-builder container.builder add r1z1-192.168.10.102:6011/brick1 1
+swift-ring-builder container.builder add r1z1-192.168.10.102:6011/brick2 1
+swift-ring-builder container.builder add r1z1-192.168.10.102:6011/brick3 1
+swift-ring-builder container.builder add r1z1-192.168.10.102:6011/brick4 1
+swift-ring-builder container.builder add r1z1-192.168.10.103:6011/brick1 1
+swift-ring-builder container.builder add r1z1-192.168.10.103:6011/brick2 1
+swift-ring-builder container.builder add r1z1-192.168.10.103:6011/brick3 1
+swift-ring-builder container.builder add r1z1-192.168.10.103:6011/brick4 1
+swift-ring-builder container.builder add r1z1-192.168.10.104:6011/brick1 1
+swift-ring-builder container.builder add r1z1-192.168.10.104:6011/brick2 1
+swift-ring-builder container.builder add r1z1-192.168.10.104:6011/brick3 1
+swift-ring-builder container.builder add r1z1-192.168.10.104:6011/brick4 1
+swift-ring-builder container.builder rebalance
+
+swift-ring-builder account.builder create 12 3 1
+swift-ring-builder account.builder add r1z1-192.168.10.101:6012/brick1 1
+swift-ring-builder account.builder add r1z1-192.168.10.101:6012/brick2 1
+swift-ring-builder account.builder add r1z1-192.168.10.101:6012/brick3 1
+swift-ring-builder account.builder add r1z1-192.168.10.101:6012/brick4 1
+swift-ring-builder account.builder add r1z1-192.168.10.102:6012/brick1 1
+swift-ring-builder account.builder add r1z1-192.168.10.102:6012/brick2 1
+swift-ring-builder account.builder add r1z1-192.168.10.102:6012/brick3 1
+swift-ring-builder account.builder add r1z1-192.168.10.102:6012/brick4 1
+swift-ring-builder account.builder add r1z1-192.168.10.103:6012/brick1 1
+swift-ring-builder account.builder add r1z1-192.168.10.103:6012/brick2 1
+swift-ring-builder account.builder add r1z1-192.168.10.103:6012/brick3 1
+swift-ring-builder account.builder add r1z1-192.168.10.103:6012/brick4 1
+swift-ring-builder account.builder add r1z1-192.168.10.104:6012/brick1 1
+swift-ring-builder account.builder add r1z1-192.168.10.104:6012/brick2 1
+swift-ring-builder account.builder add r1z1-192.168.10.104:6012/brick3 1
+swift-ring-builder account.builder add r1z1-192.168.10.104:6012/brick4 1
+swift-ring-builder account.builder rebalance
+
+# One object server per GlusterFS mount
+
+swift-ring-builder object.builder create 1 1 1
+swift-ring-builder object.builder add r1z1-127.0.0.1:6051/test1 1
+swift-ring-builder object.builder rebalance
+
+swift-ring-builder object-1.builder create 1 1 1
+swift-ring-builder object-1.builder add r1z1-127.0.0.1:6052/test2 1
+swift-ring-builder object-1.builder rebalance
+
+swift-ring-builder object-2.builder create 1 1 1
+swift-ring-builder object-2.builder add r1z1-127.0.0.1:6053/test3 1
+swift-ring-builder object-2.builder rebalance
+
+swift-ring-builder object-3.builder create 1 1 1
+swift-ring-builder object-3.builder add r1z1-127.0.0.1:6054/test4 1
+swift-ring-builder object-3.builder rebalance

@@ -1,0 +1,78 @@
+---
+
+- name: install glusterfs (centos)
+  yum: name={{ item }} state=present
+  with_items: glusterfs_packages
+  when: ansible_distribution == 'CentOS'
+
+- name: install glusterfs (fedora)
+  dnf: name={{ item }} state=present
+  with_items: glusterfs_packages
+  when: ansible_distribution == 'Fedora'
+
+- name: start glusterd
+  service: name=glusterd state=started enabled=yes
+
+- name: create XFS bricks
+  filesystem: fstype=xfs dev=/dev/sd{{ item }} opts="-f -i size=512" force=yes
+  with_items: [ 'b', 'c', 'd', 'e' ]
+
+- name: create brick mount points
+  file: path=/export/brick{{ item }} state=directory owner={{ username }} group={{ group }} mode=0770
+  with_sequence: start=1 end=4
+
+- name: mount xfs bricks
+  mount: src=/dev/sd{{ item.0 }} name=/export/brick{{ item.1 }} fstype=xfs opts="noatime,nodiratime,nobarrier,logbufs=8" dump=0 passno=0 state=mounted
+  with_together:
+    - [ 'b', 'c', 'd', 'e' ]
+    - [ '1', '2', '3', '4' ]
+
+- name: create brick directories
+  file: path=/export/brick{{ item }}/b state=directory owner={{ username }} group={{ group }}
+  with_sequence: start=1 end=4
+
+- name: peer probe other nodes
+  command: gluster peer probe storage{{ item }}
+  with_sequence: start=1 end=4
+  run_once: true
+  delegate_to: storage1
+
+- name: create glusterfs volumes
+  command: gluster --mode=script volume create {{ item.volname }} transport tcp replica 2 {{ item.host1 }}:{{ item.brick }} {{ item.host2 }}:{{ item.brick }} {{ item.host3 }}:{{ item.brick }} {{ item.host4 }}:{{ item.brick }} force
+  with_items:
+    - { volname: 'test1', host1: 'storage1', host2: 'storage2', host3: 'storage3', host4: 'storage4', brick: '/export/brick1/b'}
+    - { volname: 'test2', host1: 'storage1', host2: 'storage2', host3: 'storage3', host4: 'storage4', brick: '/export/brick2/b'}
+    - { volname: 'test3', host1: 'storage1', host2: 'storage2', host3: 'storage3', host4: 'storage4', brick: '/export/brick3/b'}
+    - { volname: 'test4', host1: 'storage1', host2: 'storage2', host3: 'storage3', host4: 'storage4', brick: '/export/brick4/b'}
+  run_once: true
+  delegate_to: storage1
+  register: vol_create_result
+  failed_when: "vol_create_result.rc!=0 and 'already exists' not in vol_create_result.stderr"
+
+- name: start glusterfs volumes
+  command: gluster --mode=script volume start test{{ item }}
+  with_sequence: start=1 end=4
+  run_once: true
+  delegate_to: storage1
+  register: vol_start_result
+  failed_when: "vol_start_result.rc!=0 and 'already started' not in vol_start_result.stderr"
+
+- name: create glusterfs mount points
+  file: path=/mnt/swiftonfile/test{{ item }} state=directory owner={{ username }} group={{ group }} mode=0750
+  with_sequence: start=1 end=4
+
+- command: umount /mnt/swiftonfile/test{{ item }}
+  with_sequence: start=1 end=4
+  ignore_errors: yes
+
+- name: mount glusterfs volumes
+  command: mount -t glusterfs localhost:test{{ item }} /mnt/swiftonfile/test{{ item }}
+  with_sequence: start=1 end=4
+
+- name: add glusterfs mounts to /etc/fstab
+  lineinfile: dest=/etc/fstab  regexp="^localhost\:test{{ item }}" line="localhost:test{{ item }} /mnt/swiftonfile/test{{ item }} glusterfs defaults,_netdev 0 0" state=present
+  with_sequence: start=1 end=4
+
+- name: chown glusterfs mounts
+  command: chown -R {{ username }}:{{ group }} /mnt/swiftonfile/test{{ item }} /export/
+  with_sequence: start=1 end=4

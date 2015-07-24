@@ -1,0 +1,66 @@
+---
+
+- name: install swift RPMs (centos)
+  yum: name={{ item }} state=present
+  with_items: swift_packages
+  when: ansible_distribution == 'CentOS'
+
+- name: install swift RPMs (fedora)
+  dnf: name={{ item }} state=present
+  with_items: swift_packages
+  when: ansible_distribution == 'Fedora'
+
+- name: install swiftonfile RPM
+  yum: name={{ swiftonfile_centos_rpm_url}} state=present
+  when: ansible_distribution == 'CentOS'
+
+- name: install swiftonfile RPM
+  dnf: name={{ swiftonfile_fedora_rpm_url}} state=present
+  when: ansible_distribution == 'Fedora'
+
+- name: remove all files from /etc/swift
+  file: path=/etc/swift state=absent
+
+- name: copy rc.local
+  template: src=rc.local.j2 dest=/etc/rc.d/rc.local owner=root group=root mode=0755
+
+- name: make sure /var/cache/swift exists
+  file: path=/var/cache/swift state=directory owner={{ username }} group={{ group }} mode=0750
+
+- name: make sure /var/run/swift exists
+  file: path=/var/run/swift state=directory owner={{ username }} group={{ group }} mode=0750
+
+- name: chown /var/cache/swift and /var/run/swift
+  command: chown -R {{ username }}:{{ group }} /var/cache/swift /var/run/swift
+
+- name: create /etc/swift
+  file: path=/etc/swift/object-server state=directory owner={{ username }} group={{ group }} mode=0750
+
+- name: copy swift conf files
+  template: src={{ item }}.conf.j2 dest=/etc/swift/{{ item }}.conf owner={{ username }} group={{ group }} mode=0644
+  with_items:
+    - proxy-server
+    - swift
+    - object-expirer
+    - account-server
+    - container-server
+
+- name: copy object server conf files
+  template: src=object-server/{{ item }}.conf.j2 dest=/etc/swift/object-server/{{ item }}.conf owner={{ username }} group={{ group }} mode=0644
+  with_sequence: start=1 end=4
+
+- name: generate ring files
+  script: remakerings
+  sudo: no
+  run_once: true
+  delegate_to: storage1
+
+- name: copy ring files to other nodes
+  sudo: no
+  shell: scp -q -o StrictHostKeyChecking=no /etc/swift/*.ring.gz {{ username }}@storage{{ item}}:/etc/swift
+  with_sequence: start=2 end=4
+  run_once: true
+  delegate_to: storage1
+
+- name: start swift services
+  command: swift-init main start
